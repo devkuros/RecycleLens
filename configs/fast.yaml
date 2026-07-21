@@ -1,0 +1,41 @@
+seed: 42
+num_classes: 3
+class_names:
+  0: Recyclable
+  1: Electronic
+  2: Organic
+
+model:
+  name: tf_efficientnetv2_s
+  pretrained: true
+  image_size: 224
+
+train:
+  n_folds: 2
+  epochs: 3
+  batch_size: 48
+  num_workers: 0
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-2
+  min_lr: 1.0e-6
+  target_macro_f1: 0.92
+  patience: 2
+  torch_threads: null
+  max_samples: 8000
+
+infer:
+  batch_size: 96
+  num_workers: 0
+
+paths:
+  train_dir: data/train
+  test_dir: data/test
+  template_csv: data/template.csv
+  models_dir: outputs/models
+  logs_dir: outputs/logs
+  submissions_dir: outputs/submissions
+
+submission:
+  expected_rows: 1458
+  id_column: id
+  label_column: predicted

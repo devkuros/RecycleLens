@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+eggs/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+.venv/
+venv/
+env/
+.env
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+
+# Type / lint cache
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Project data (keep structure via .gitkeep; track template.csv)
+data/train/**
+!data/train/.gitkeep
+data/test/**
+!data/test/.gitkeep
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.png
+data/**/*.webp
+data/**/*.bmp
+data/**/*.tif
+data/**/*.tiff
+
+# Project outputs (keep structure via .gitkeep)
+outputs/models/**
+!outputs/models/.gitkeep
+outputs/logs/**
+!outputs/logs/.gitkeep
+outputs/submissions/**
+!outputs/submissions/.gitkeep
+
+# Model weights & large artifacts
+*.pth
+*.pt
+*.ckpt
+*.onnx
+
+# Local secrets / env
+.env.local
+*.log
