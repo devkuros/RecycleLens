@@ -13,7 +13,8 @@ model:
 train:
   n_folds: 5
   epochs: 10
-  batch_size: 32
+  # T4-safe (~15 GiB VRAM) + AMP; juga jalan di CPU (lebih lambat — iterasi cepat pakai fast.yaml)
+  batch_size: 8
   num_workers: 2
   learning_rate: 1.0e-4
   weight_decay: 1.0e-2
@@ -24,7 +25,7 @@ train:
   max_samples: 0
 
 infer:
-  batch_size: 64
+  batch_size: 16
   num_workers: 2
 
 paths:

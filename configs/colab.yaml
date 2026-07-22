@@ -13,7 +13,7 @@ model:
 train:
   n_folds: 5
   epochs: 10
-  # T4 (~15 GiB) + FP16 AMP: batch 8 aman; batch 16 sering OOM jika ada proses lama
+  # Alias Colab: sama dengan default.yaml (T4-safe)
   batch_size: 8
   num_workers: 2
   learning_rate: 1.0e-4

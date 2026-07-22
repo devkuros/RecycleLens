@@ -17,7 +17,8 @@ def test_load_default_config():
     assert cfg.train.patience == 3
     assert cfg.train.max_samples == 0
     assert cfg.train.torch_threads is None
-    assert cfg.infer.batch_size == 64
+    assert cfg.train.batch_size == 8
+    assert cfg.infer.batch_size == 16
     assert cfg.infer.num_workers == 2
     assert cfg.num_classes == 3
     assert cfg.paths.train_dir == root / "data" / "train"

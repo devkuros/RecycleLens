@@ -20,7 +20,7 @@ class ModelConfig:
 class TrainConfig:
     n_folds: int = 5
     epochs: int = 10
-    batch_size: int = 32
+    batch_size: int = 8
     num_workers: int = 2
     learning_rate: float = 1e-4
     weight_decay: float = 1e-2
@@ -33,7 +33,7 @@ class TrainConfig:
 
 @dataclass
 class InferConfig:
-    batch_size: int = 64
+    batch_size: int = 16
     num_workers: int = 0
 
 
@@ -115,7 +115,7 @@ def load_config(path: str | Path, root: str | Path | None = None) -> Config:
         train=TrainConfig(
             n_folds=int(train_raw.get("n_folds", 5)),
             epochs=int(train_raw.get("epochs", 10)),
-            batch_size=int(train_raw.get("batch_size", 32)),
+            batch_size=int(train_raw.get("batch_size", 8)),
             num_workers=int(train_raw.get("num_workers", 2)),
             learning_rate=float(train_raw.get("learning_rate", 1e-4)),
             weight_decay=float(train_raw.get("weight_decay", 1e-2)),
@@ -130,7 +130,7 @@ def load_config(path: str | Path, root: str | Path | None = None) -> Config:
             max_samples=int(train_raw.get("max_samples", 0)),
         ),
         infer=InferConfig(
-            batch_size=int(infer_raw.get("batch_size", 64)),
+            batch_size=int(infer_raw.get("batch_size", 16)),
             num_workers=int(infer_raw.get("num_workers", 0)),
         ),
         paths=PathsConfig(
