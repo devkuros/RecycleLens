@@ -88,11 +88,11 @@ Jalankan pipeline di **T4 GPU** Colab memakai disk lokal runtime (`/content`) �
 2. Runtime → Change runtime type → Hardware accelerator → **T4 GPU**.
 3. Isi `REPO_URL`, clone, lalu `pip install -e .`.
 4. Siapkan dataset ke `/content/waste-python/data/` lewat **upload ZIP** atau **unduh URL** (layout sama seperti [Data layout](#data-layout)).
-5. Train & predict (mode cepat):
+5. Train & predict (config T4 Colab — batch lebih kecil agar tidak OOM):
 
 ```bash
-python scripts/train.py --config configs/fast.yaml
-python scripts/predict.py --config configs/fast.yaml
+python scripts/train.py --config configs/colab.yaml
+python scripts/predict.py --config configs/colab.yaml
 ```
 
 6. Unduh `outputs/submissions/submission.csv` (dan checkpoint jika perlu) sebelum disconnect.

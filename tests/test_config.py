@@ -35,3 +35,13 @@ def test_load_fast_config():
     assert cfg.train.max_samples == 8000
     assert cfg.infer.batch_size == 96
     assert cfg.infer.num_workers == 0
+
+
+def test_load_colab_config():
+    root = Path(__file__).resolve().parents[1]
+    cfg = load_config(root / "configs" / "colab.yaml", root=root)
+    assert cfg.model.image_size == 300
+    assert cfg.train.n_folds == 5
+    assert cfg.train.epochs == 10
+    assert cfg.train.batch_size == 16
+    assert cfg.infer.batch_size == 32
