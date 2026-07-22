@@ -80,6 +80,25 @@ Hasil yang diharapkan:
 
 Untuk training penuh (5-fold) dan inferensi final, lihat bagian Training dan Inferensi di bawah.
 
+## Google Colab
+
+Jalankan pipeline di **T4 GPU** Colab memakai disk lokal runtime (`/content`) — **tanpa** Google Drive.
+
+1. Buka [`notebooks/colab_run.ipynb`](notebooks/colab_run.ipynb) di Colab (File → Upload notebook, atau Open in Colab jika repo sudah di GitHub).
+2. Runtime → Change runtime type → Hardware accelerator → **T4 GPU**.
+3. Isi `REPO_URL`, clone, lalu `pip install -e .`.
+4. Siapkan dataset ke `/content/waste-python/data/` lewat **upload ZIP** atau **unduh URL** (layout sama seperti [Data layout](#data-layout)).
+5. Train & predict (mode cepat):
+
+```bash
+python scripts/train.py --config configs/fast.yaml
+python scripts/predict.py --config configs/fast.yaml
+```
+
+6. Unduh `outputs/submissions/submission.csv` (dan checkpoint jika perlu) sebelum disconnect.
+
+Runtime Colab ephemeral: data, checkpoint, dan submission hilang saat sesi berakhir. Jangan andalkan penyimpanan lokal Colab untuk jangka panjang.
+
 ## Data layout
 
 Letakkan dataset resmi di folder berikut (citra tidak di-commit):
