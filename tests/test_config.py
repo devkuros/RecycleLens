@@ -43,5 +43,5 @@ def test_load_colab_config():
     assert cfg.model.image_size == 300
     assert cfg.train.n_folds == 5
     assert cfg.train.epochs == 10
-    assert cfg.train.batch_size == 16
-    assert cfg.infer.batch_size == 32
+    assert cfg.train.batch_size == 8
+    assert cfg.infer.batch_size == 16

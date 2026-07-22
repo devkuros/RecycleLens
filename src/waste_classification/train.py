@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +25,12 @@ from waste_classification.transforms import get_train_transforms, get_val_transf
 
 def _device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def _clear_cuda() -> None:
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def stratified_subset(
@@ -59,6 +66,7 @@ def _run_epoch(
     optimizer: torch.optim.Optimizer | None,
     device: torch.device,
     train: bool,
+    scaler: torch.amp.GradScaler | None = None,
 ) -> tuple[float, float]:
     if train:
         model.train()
@@ -69,6 +77,7 @@ def _run_epoch(
     all_preds: list[int] = []
     all_labels: list[int] = []
     non_blocking = device.type == "cuda"
+    use_amp = device.type == "cuda"
 
     context = torch.enable_grad() if train else torch.no_grad()
     with context:
@@ -76,13 +85,19 @@ def _run_epoch(
             images = batch["image"].to(device, non_blocking=non_blocking)
             labels = batch["label"].to(device, non_blocking=non_blocking)
 
-            logits = model(images)
-            loss = criterion(logits, labels)
+            with torch.amp.autocast(device_type=device.type, enabled=use_amp):
+                logits = model(images)
+                loss = criterion(logits, labels)
 
             if train and optimizer is not None:
                 optimizer.zero_grad(set_to_none=True)
-                loss.backward()
-                optimizer.step()
+                if scaler is not None and use_amp:
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    optimizer.step()
 
             losses.append(float(loss.item()))
             preds = torch.argmax(logits, dim=1)
@@ -151,60 +166,71 @@ def train_fold(
         T_max=cfg.train.epochs,
         eta_min=cfg.train.min_lr,
     )
+    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
 
     best_f1 = -1.0
     epochs_without_improve = 0
     best_path = cfg.paths.models_dir / f"fold_{fold}.pth"
     history: list[dict] = []
 
-    for epoch in range(1, cfg.train.epochs + 1):
-        train_loss, train_f1 = _run_epoch(
-            model, train_loader, criterion, optimizer, device, train=True
-        )
-        val_loss, val_f1 = _run_epoch(
-            model, val_loader, criterion, None, device, train=False
-        )
-        scheduler.step()
-
-        record = {
-            "epoch": epoch,
-            "train_loss": train_loss,
-            "train_macro_f1": train_f1,
-            "val_loss": val_loss,
-            "val_macro_f1": val_f1,
-            "lr": float(scheduler.get_last_lr()[0]),
-        }
-        history.append(record)
-        print(
-            f"[fold {fold}] epoch {epoch}/{cfg.train.epochs} "
-            f"train_loss={train_loss:.4f} train_f1={train_f1:.4f} "
-            f"val_loss={val_loss:.4f} val_f1={val_f1:.4f}"
-        )
-
-        if val_f1 > best_f1:
-            best_f1 = val_f1
-            epochs_without_improve = 0
-            cfg.paths.models_dir.mkdir(parents=True, exist_ok=True)
-            torch.save(
-                {
-                    "fold": fold,
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "val_macro_f1": best_f1,
-                    "model_name": cfg.model.name,
-                    "num_classes": cfg.num_classes,
-                    "image_size": cfg.model.image_size,
-                },
-                best_path,
+    try:
+        for epoch in range(1, cfg.train.epochs + 1):
+            train_loss, train_f1 = _run_epoch(
+                model,
+                train_loader,
+                criterion,
+                optimizer,
+                device,
+                train=True,
+                scaler=scaler,
             )
-        else:
-            epochs_without_improve += 1
-            if epochs_without_improve >= cfg.train.patience:
-                print(
-                    f"[fold {fold}] early stopping at epoch {epoch} "
-                    f"(patience={cfg.train.patience})"
+            val_loss, val_f1 = _run_epoch(
+                model, val_loader, criterion, None, device, train=False, scaler=None
+            )
+            scheduler.step()
+
+            record = {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "train_macro_f1": train_f1,
+                "val_loss": val_loss,
+                "val_macro_f1": val_f1,
+                "lr": float(scheduler.get_last_lr()[0]),
+            }
+            history.append(record)
+            print(
+                f"[fold {fold}] epoch {epoch}/{cfg.train.epochs} "
+                f"train_loss={train_loss:.4f} train_f1={train_f1:.4f} "
+                f"val_loss={val_loss:.4f} val_f1={val_f1:.4f}"
+            )
+
+            if val_f1 > best_f1:
+                best_f1 = val_f1
+                epochs_without_improve = 0
+                cfg.paths.models_dir.mkdir(parents=True, exist_ok=True)
+                torch.save(
+                    {
+                        "fold": fold,
+                        "epoch": epoch,
+                        "model_state_dict": model.state_dict(),
+                        "val_macro_f1": best_f1,
+                        "model_name": cfg.model.name,
+                        "num_classes": cfg.num_classes,
+                        "image_size": cfg.model.image_size,
+                    },
+                    best_path,
                 )
-                break
+            else:
+                epochs_without_improve += 1
+                if epochs_without_improve >= cfg.train.patience:
+                    print(
+                        f"[fold {fold}] early stopping at epoch {epoch} "
+                        f"(patience={cfg.train.patience})"
+                    )
+                    break
+    finally:
+        del model, optimizer, scheduler, scaler, train_loader, val_loader
+        _clear_cuda()
 
     passed = best_f1 >= cfg.train.target_macro_f1
     return {

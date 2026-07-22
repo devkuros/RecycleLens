@@ -13,8 +13,8 @@ model:
 train:
   n_folds: 5
   epochs: 10
-  # T4 (~15 GiB): batch 32 @ 300px sering OOM; 16 aman untuk EfficientNetV2-S
-  batch_size: 16
+  # T4 (~15 GiB) + FP16 AMP: batch 8 aman; batch 16 sering OOM jika ada proses lama
+  batch_size: 8
   num_workers: 2
   learning_rate: 1.0e-4
   weight_decay: 1.0e-2
@@ -25,7 +25,7 @@ train:
   max_samples: 0
 
 infer:
-  batch_size: 32
+  batch_size: 16
   num_workers: 2
 
 paths:
